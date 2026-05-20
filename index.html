@@ -161,6 +161,23 @@
     .saved-count{font-weight:900;color:var(--accent)}
     .saved-empty{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;color:var(--muted)}
     .saved-note{width:100%;min-height:74px;margin-top:10px;border:1px solid var(--line);border-radius:16px;padding:10px;font:inherit;background:#fffdf8}
+
+    .saved-contact-panel{margin-top:12px;border:1px solid rgba(23,50,77,.12);background:#fbf8f1;border-radius:16px;padding:12px}
+    .saved-contact-panel h4{margin:0 0 8px;font-size:1rem;color:var(--dark)}
+    .saved-contact-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .saved-field{display:grid;gap:4px;font-weight:900;font-size:.88rem;color:#39434d}
+    .saved-field input,.saved-field textarea{width:100%;border:1px solid var(--line);border-radius:13px;padding:9px 10px;font:inherit;background:#fff;min-height:auto}
+    .saved-field textarea{min-height:64px;resize:vertical}
+    .compare-box{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;overflow:auto}
+    .compare-box h3{margin-bottom:8px}
+    .compare-box table{width:100%;min-width:820px;border-collapse:collapse;font-size:.92rem}
+    .compare-box th,.compare-box td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}
+    .compare-box th{background:#fbf5ea;color:#5b4732;white-space:nowrap}
+    .privacy-warning{border:1px solid rgba(164,63,63,.28);background:#fff6f4;border-radius:18px;padding:14px;margin:14px 0;color:#57322f}
+    .privacy-warning strong{display:block;color:var(--danger);margin-bottom:4px}
+    .danger-zone{border:1px solid rgba(164,63,63,.3);background:#fffafa;border-radius:18px;padding:16px;margin-top:16px}
+    .danger-zone h3{color:var(--danger)}
+    .danger-btn{border:1px solid rgba(164,63,63,.45);background:#fff;color:var(--danger);border-radius:999px;padding:10px 14px;font-weight:900;cursor:pointer}
     .facility-table{overflow:auto;border-radius:var(--radius);border:1px solid var(--line);background:#fff}
     .facility-table table{min-width:980px}
     .source-note{font-size:.9rem;color:var(--muted);margin-top:10px}
@@ -781,6 +798,7 @@
         </div>
         <p class="source-note data-status" id="facilityDataStatus">施設データを読み込み中です。</p>
         <p class="source-note">施設情報は変更される場合があります。最終確認は、公式情報・電話確認・見学・病院の担当看護師や医療相談員への相談とあわせて行ってください。</p>
+        <p class="source-note"><strong>施設データ：</strong>都道府県別CSVを読み込みます。掲載情報は公的オープンデータ等をもとにした整理用データです。最新の空き状況・費用・対応可否は必ず公式情報や電話確認で確認してください。</p>
         <div class="source-split">
           <div><strong>公式情報</strong><br>施設公式サイト・医療情報ネット・介護サービス情報公表システムで、所在地、サービス内容、指定情報を確認します。</div>
           <div><strong>口コミ・雰囲気</strong><br>Googleマップ、Caloo、みんなの介護、LIFULL介護などで利用者目線の情報を確認します。</div>
@@ -823,6 +841,7 @@
           <p>退院調整中は、病院側がすでに候補先へ連絡している場合があります。家族から電話する前に、担当看護師や医療相談員に「家族から確認してよいか」を一度聞くと安心です。</p>
         </div>
         <div class="facility-results" id="savedFacilitiesList"></div>
+        <div id="savedComparisonBox"></div>
       </div>
     </div>
   </section>
@@ -841,6 +860,10 @@
         <span class="badge std">共有・共同編集</span>
         <h3>編集用リンクを作る</h3>
         <p class="source-note">この機能は、現在の入力内容をURLに入れて共有する簡易方式です。受け取った家族は編集できます。編集後は「更新した共有リンクを作る」を押して、LINEなどで再共有してください。</p>
+        <div class="privacy-warning">
+          <strong>共有前に必ず確認してください</strong>
+          共有リンクには、入力したメモや保存した施設情報が含まれる場合があります。氏名、住所、電話番号、詳しい病名、金銭情報などは必要がない限り入力しないでください。家族以外には共有しないでください。
+        </div>
         <div class="share-grid">
           <div class="share-card">
             <h3>共有する内容</h3>
@@ -869,6 +892,11 @@
           <div><strong>かんたん共有</strong><br>ログイン不要。GitHub Pagesだけで使えます。共有リンクを開いた人が編集できます。</div>
           <div><strong>注意点</strong><br>同じURLに自動同期される方式ではありません。編集した人が更新リンクを作り直して共有します。</div>
           <div><strong>本格運用</strong><br>同じURLで全員が同時編集する場合は、Firebase・Supabaseなどの会員データベース連携に変更します。</div>
+        </div>
+        <div class="danger-zone" id="privacy-cleanup">
+          <h3>この端末の入力内容を削除する</h3>
+          <p class="source-note">共有端末や家族以外も使うスマホでは、入力内容を残さない方が安心です。メモ、チェック、保存施設、共有用データ、表示設定をこの端末から削除できます。</p>
+          <button class="danger-btn" id="clearAllLocalDataBtn" type="button">この端末の入力内容をすべて削除</button>
         </div>
       </div>
     </div>
@@ -1147,7 +1175,7 @@
       <div class="section-head">
         <div>
           <h2>料金プラン</h2>
-          <p>無料で基本を確認し、スタンダードで家族メモ・施設検索・保存機能をしっかり使い、プレミアムで現役看護師に相談できます。相談はプレミアム限定です。</p>
+          <p>無料は「まず確認する」、スタンダードは「家族で整理する」、プレミアムは「現役看護師と一緒に整理する」ためのプランです。相談はプレミアム限定です。</p>
         </div>
       </div>
 
@@ -1156,10 +1184,10 @@
           <span class="badge free">ライト</span>
           <h3>無料</h3>
           <div class="price">0円</div>
-          <div class="feature">トップページ</div>
-          <div class="feature">一部の基本ガイド</div>
-          <div class="feature">入院時の簡易持ち物リスト</div>
-          <div class="feature no">全チェックリスト</div>
+          <div class="feature">基本ガイドの確認</div>
+          <div class="feature">一部チェックリスト</div>
+          <div class="feature">施設検索の基本</div>
+          <div class="feature no">病院に見せるまとめ</div>
           <div class="feature no">看護師相談</div>
           <a class="btn light" href="#guide">無料で見る</a>
         </div>
@@ -1168,10 +1196,10 @@
           <span class="badge std">スタンダード</span>
           <h3>サイト完全版</h3>
           <div class="price">500円<small>/月</small></div>
-          <div class="feature">全ページ閲覧</div>
-          <div class="feature">状況別ナビ完全版</div>
-          <div class="feature">自由記載例つき入力欄</div>
-          <div class="feature">印刷用シート</div>
+          <div class="feature">全チェックリスト</div>
+          <div class="feature">家族メモ保存</div>
+          <div class="feature">病院に見せるまとめ</div>
+          <div class="feature">保存施設の比較・連絡メモ</div>
           <div class="feature no">看護師相談</div>
           <a class="btn gold" href="#paywall-note">スタンダード導線</a>
         </div>
@@ -1182,9 +1210,9 @@
           <div class="price">1,000円<small>/月</small></div>
           <div class="feature">スタンダード全内容</div>
           <div class="feature">現役看護師への相談</div>
-          <div class="feature">病院に聞くことの整理</div>
-          <div class="feature">退院前の不安整理</div>
-          <div class="feature">ケアマネ・包括への相談内容整理</div>
+          <div class="feature">病院に聞く質問リスト整理</div>
+          <div class="feature">退院前の確認事項整理</div>
+          <div class="feature">家族状況・介護相談先の整理</div>
           <a class="btn" href="#premium">相談内容を見る</a>
         </div>
       </div>
@@ -1378,17 +1406,6 @@
     }
   });
 
-
-  const fallbackFacilities = [
-    {prefecture:"埼玉県", city:"さいたま市", name:"サンプル：地域包括ケア対応病院", category:"病院", types:"地域包括ケア病棟", tags:"hospital-now,rehab,home-support", address:"埼玉県さいたま市", phone:"", website:"", features:"退院支援・リハビリ・在宅復帰相談", notes:"実データ追加時は正式な施設名・所在地へ差し替えてください。"},
-    {prefecture:"埼玉県", city:"川口市", name:"サンプル：在宅復帰支援老健", category:"介護施設", types:"介護老人保健施設,通所リハ", tags:"rehab,hospital-now,home-support", address:"埼玉県川口市", phone:"", website:"", features:"退院後のリハビリ・在宅復帰支援", notes:"空き状況や入所条件は必ず施設へ確認。"},
-    {prefecture:"東京都", city:"練馬区", name:"サンプル：認知症対応グループホーム", category:"介護施設", types:"グループホーム", tags:"dementia,heavy-care", address:"東京都練馬区", phone:"", website:"", features:"少人数生活・認知症対応", notes:"医療処置の対応可否を確認。"},
-    {prefecture:"東京都", city:"世田谷区", name:"サンプル：訪問看護ステーション", category:"在宅サービス", types:"訪問看護", tags:"medical-care,home-support,short-stay", address:"東京都世田谷区", phone:"", website:"", features:"自宅療養・医療ケア・家族支援", notes:"主治医の指示書や緊急対応体制を確認。"},
-    {prefecture:"神奈川県", city:"横浜市", name:"サンプル：介護付き有料老人ホーム", category:"高齢者向け住まい", types:"介護付き有料老人ホーム", tags:"heavy-care,dementia,hospital-now", address:"神奈川県横浜市", phone:"", website:"", features:"24時間見守り・介護サービス", notes:"夜間看護・看取り・追加費用を確認。"},
-    {prefecture:"千葉県", city:"船橋市", name:"サンプル：介護医療院", category:"介護施設", types:"介護医療院", tags:"medical-care,heavy-care,dementia", address:"千葉県船橋市", phone:"", website:"", features:"長期療養・医学管理・介護", notes:"対応できる医療処置、費用、面会条件を確認。"},
-    {prefecture:"沖縄県", city:"那覇市", name:"サンプル：サービス付き高齢者向け住宅", category:"高齢者向け住まい", types:"サービス付き高齢者向け住宅", tags:"home-support,budget", address:"沖縄県那覇市", phone:"", website:"", features:"安否確認・生活相談", notes:"介護サービスは別契約になることが多いため確認。"}
-  ];
-
   const allPrefectures = ["北海道","青森県","岩手県","宮城県","秋田県","山形県","福島県","茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県","新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県","静岡県","愛知県","三重県","滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県","鳥取県","島根県","岡山県","広島県","山口県","徳島県","香川県","愛媛県","高知県","福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"];
 
   const prefFileMap = {
@@ -1538,9 +1555,34 @@
     });
   }
 
-  function updateSavedMemo(id, memo){
-    const list = getSavedFacilities().map(item=>item.id===id ? {...item, familyMemo:memo} : item);
+  function updateSavedFacilityField(id, field, value){
+    const list = getSavedFacilities().map(item=>item.id===id ? {...item, [field]:value} : item);
     localStorage.setItem(savedFacilityKey, JSON.stringify(list));
+    renderSavedComparison(list);
+  }
+
+  function updateSavedMemo(id, memo){
+    updateSavedFacilityField(id, 'familyMemo', memo);
+  }
+
+  function renderSavedComparison(list){
+    const box=document.getElementById('savedComparisonBox');
+    if(!box) return;
+    if(!list || !list.length){ box.innerHTML=''; return; }
+    const rows=list.map(f=>`<tr>
+      <td><strong>${safeHtml(f.name)}</strong><br><span class="source-note">${safeHtml(f.prefecture)} ${safeHtml(f.city||'')}</span></td>
+      <td>${safeHtml(f.types||f.category||'未登録')}</td>
+      <td>${safeHtml(f.vacancyStatus||'未確認')}</td>
+      <td>${safeHtml(f.feeMemo||'未確認')}</td>
+      <td>${safeHtml(f.medicalCareMemo||'未確認')}</td>
+      <td>${safeHtml(f.dementiaMemo||'未確認')}</td>
+      <td>${safeHtml(f.visitPlan||'未定')}</td>
+    </tr>`).join('');
+    box.innerHTML=`<div class="compare-box">
+      <h3>保存候補の比較表</h3>
+      <p class="source-note">保存施設の連絡メモをもとに、空き状況・費用・医療対応などを横並びで確認できます。</p>
+      <table><thead><tr><th>候補</th><th>種類</th><th>空き</th><th>費用</th><th>医療ケア</th><th>認知症対応</th><th>見学</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
   }
 
   function renderSavedFacilities(){
@@ -1548,6 +1590,7 @@
     const count = document.getElementById('savedCount');
     const box = document.getElementById('savedFacilitiesList');
     if(count) count.textContent = `保存中：${list.length}件`;
+    renderSavedComparison(list);
     if(!box) return;
     if(!list.length){
       box.innerHTML = '<div class="saved-empty"><strong>まだ保存された候補はありません。</strong><br>施設・病院ナビの候補カードから「保存する」を押すと、ここに一覧で表示されます。</div>';
@@ -1564,7 +1607,20 @@
         <p><strong>確認メモ：</strong>${safeHtml(f.notes)||'未登録'}</p>
         <p><strong>所在地：</strong>${safeHtml(f.address)||'未登録'}　<strong>電話：</strong>${safeHtml(f.phone)||'未登録'}　<strong>保存日：</strong>${safeHtml(savedDate)}</p>
         ${externalLinks(f)}
-        <textarea class="saved-note" data-saved-memo="${safeHtml(f.id)}" placeholder="例：5/20に電話。空き状況、費用、医療ケア、面会時間を確認する。">${safeHtml(f.familyMemo||'')}</textarea>
+        <textarea class="saved-note" data-saved-memo="${safeHtml(f.id)}" placeholder="例：家族で気になっている点、病院に相談したい点を書く。">${safeHtml(f.familyMemo||'')}</textarea>
+        <div class="saved-contact-panel">
+          <h4>連絡履歴メモ</h4>
+          <div class="saved-contact-grid">
+            <label class="saved-field">連絡日<input type="date" data-contact-id="${safeHtml(f.id)}" data-contact-field="contactDate" value="${safeHtml(f.contactDate||'')}"></label>
+            <label class="saved-field">対応者<input type="text" data-contact-id="${safeHtml(f.id)}" data-contact-field="contactPerson" value="${safeHtml(f.contactPerson||'')}" placeholder="例：相談員 佐藤さん"></label>
+            <label class="saved-field">空き状況<input type="text" data-contact-id="${safeHtml(f.id)}" data-contact-field="vacancyStatus" value="${safeHtml(f.vacancyStatus||'')}" placeholder="例：空きあり / 待機 / 要確認"></label>
+            <label class="saved-field">費用<input type="text" data-contact-id="${safeHtml(f.id)}" data-contact-field="feeMemo" value="${safeHtml(f.feeMemo||'')}" placeholder="例：月額〇万円前後、別途費用あり"></label>
+            <label class="saved-field">医療ケア<input type="text" data-contact-id="${safeHtml(f.id)}" data-contact-field="medicalCareMemo" value="${safeHtml(f.medicalCareMemo||'')}" placeholder="例：胃ろう、インスリン、酸素など確認"></label>
+            <label class="saved-field">認知症対応<input type="text" data-contact-id="${safeHtml(f.id)}" data-contact-field="dementiaMemo" value="${safeHtml(f.dementiaMemo||'')}" placeholder="例：対応可、症状により相談"></label>
+            <label class="saved-field">見学予定<input type="text" data-contact-id="${safeHtml(f.id)}" data-contact-field="visitPlan" value="${safeHtml(f.visitPlan||'')}" placeholder="例：5/25 14時に見学"></label>
+            <label class="saved-field">次に確認すること<textarea data-contact-id="${safeHtml(f.id)}" data-contact-field="nextAction" placeholder="例：病院の医療相談員へ、家族から連絡してよいか確認する。">${safeHtml(f.nextAction||'')}</textarea></label>
+          </div>
+        </div>
         <div class="save-actions"><button class="remove-saved-btn" type="button" data-remove-save="${safeHtml(f.id)}">保存から削除</button></div>
       </article>`;
     }).join('');
@@ -1575,6 +1631,10 @@
     });
     document.querySelectorAll('[data-saved-memo]').forEach(area=>{
       area.addEventListener('input',()=>updateSavedMemo(area.dataset.savedMemo, area.value));
+    });
+    document.querySelectorAll('[data-contact-field]').forEach(el=>{
+      const eventName = el.tagName === 'TEXTAREA' ? 'input' : 'input';
+      el.addEventListener(eventName,()=>updateSavedFacilityField(el.dataset.contactId, el.dataset.contactField, el.value));
     });
   }
 
@@ -1590,7 +1650,15 @@
       `電話：${f.phone||'未登録'}`,
       `特徴：${f.features||'未登録'}`,
       `確認メモ：${f.notes||'未登録'}`,
-      `家族メモ：${f.familyMemo||'未記入'}`
+      `家族メモ：${f.familyMemo||'未記入'}`,
+      `連絡日：${f.contactDate||'未記入'}`,
+      `対応者：${f.contactPerson||'未記入'}`,
+      `空き状況：${f.vacancyStatus||'未確認'}`,
+      `費用：${f.feeMemo||'未確認'}`,
+      `医療ケア：${f.medicalCareMemo||'未確認'}`,
+      `認知症対応：${f.dementiaMemo||'未確認'}`,
+      `見学予定：${f.visitPlan||'未定'}`,
+      `次に確認すること：${f.nextAction||'未記入'}`
     ].join('\n')).join('\n\n');
   }
 
@@ -1686,7 +1754,7 @@
       return;
     }
     if(!facilities.length){
-      results.innerHTML='<div class="facility-card"><strong>この都道府県の施設データをまだ読み込めていません。</strong><p>少し待ってから、もう一度「条件で絞り込む」を押してください。</p></div>';
+      results.innerHTML='<div class="facility-card"><strong>施設データを読み込めていません。</strong><p>通信状況を確認して再読み込みしてください。急ぎの場合は、医療情報ネット・介護サービス情報公表システムなどの公的サイトも確認してください。</p></div>';
       return;
     }
     const filtered=facilities.filter(f=>{
@@ -1822,7 +1890,7 @@
     }
     facilities=[];
     loadedSourceMode="not-found";
-    setFacilityStatus(`<strong>${safeHtml(pref)}の施設データが見つかりませんでした。</strong><br>dataフォルダ内に ${safeHtml(prefFileMap[pref]||'該当CSV')} をアップロードするか、facilities.csvを確認してください。`);
+    setFacilityStatus(`<strong>${safeHtml(pref)}の施設データを読み込めませんでした。</strong><br>通信状況を確認して再読み込みしてください。それでも表示されない場合は、医療情報ネット・介護サービス情報公表システムなどの公的サイトも確認してください。`);
     populateCities();
     renderFacilities();
   }
@@ -2007,6 +2075,18 @@
   document.getElementById('shareUrlBox')?.addEventListener('focus', e=>e.target.select());
   tryImportShareFromHash();
   refreshShareUrlBox();
+
+
+  document.getElementById('clearAllLocalDataBtn')?.addEventListener('click',()=>{
+    const ok = confirm('この端末に保存された入力内容、チェック、保存施設、家族メモ、表示設定をすべて削除します。よろしいですか？');
+    if(!ok) return;
+    Object.keys(localStorage).forEach(key=>{
+      if(key.startsWith('family-navi-')) localStorage.removeItem(key);
+    });
+    alert('この端末の入力内容を削除しました。');
+    const cleanUrl = window.location.pathname + window.location.search.replace(/([?&])v=[^&]*/,'$1v=clear' + Date.now()).replace(/[?&]$/,'');
+    window.location.href = cleanUrl || window.location.pathname;
+  });
 
 
   const savedFontMode = localStorage.getItem('family-navi-font-mode') || 'normal';
