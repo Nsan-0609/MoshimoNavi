@@ -164,6 +164,13 @@
     .facility-table{overflow:auto;border-radius:var(--radius);border:1px solid var(--line);background:#fff}
     .facility-table table{min-width:980px}
     .source-note{font-size:.9rem;color:var(--muted);margin-top:10px}
+    .data-status{background:#fff8e8;border:1px solid rgba(192,147,73,.45);border-radius:16px;padding:10px 12px;color:#5b4732}
+    .result-summary{background:#eef7f3;border:1px solid rgba(32,127,96,.22);border-radius:18px;padding:12px 14px;color:#263b34;font-weight:800}
+    .result-summary small{display:block;margin-top:4px;color:var(--muted);font-weight:600;line-height:1.7}
+    .facility-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px}
+    .facility-title{font-size:1.08rem;font-weight:950;line-height:1.45;color:var(--ink)}
+    .facility-meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+    .facility-meta-grid div{background:#fffdf8;border:1px solid var(--line);border-radius:14px;padding:9px 10px;font-size:.92rem}
 
     .coordination-notice{
       position:relative;border:1px solid rgba(192,147,73,.7);background:linear-gradient(135deg,#fff8e8,#fffdf8);
@@ -338,6 +345,9 @@
       .coordination-notice{padding:14px;border-radius:18px;margin:12px 0}
       .coordination-notice strong{font-size:1rem}
       .coordination-modal{left:14px;right:14px;bottom:14px;max-width:none;padding:15px;border-radius:18px}
+      .facility-meta-grid{grid-template-columns:1fr}
+      .facility-card-top{display:block}
+      .external-links{grid-template-columns:1fr}
       .facility-table{border-radius:16px;margin-left:-2px;margin-right:-2px}
       .facility-table table,table{min-width:720px;font-size:.92rem}
       th,td{padding:10px}
@@ -755,7 +765,8 @@
           <a class="btn light" href="https://www.iryou.teikyouseido.mhlw.go.jp/" target="_blank" rel="noopener">医療情報ネットで探す</a>
           <a class="btn light" href="https://www.kaigokensaku.mhlw.go.jp/" target="_blank" rel="noopener">介護サービス情報で探す</a>
         </div>
-        <p class="source-note">実運用では、施設データを <strong>facilities.csv</strong> に追加・差し替えれば、この検索欄に反映されます。CSVを更新すると、施設検索に反映されます。</p>
+        <p class="source-note data-status" id="facilityDataStatus">施設データを読み込み中です。</p>
+        <p class="source-note">施設情報は変更される場合があります。最終確認は、公式情報・電話確認・見学・病院の担当看護師や医療相談員への相談とあわせて行ってください。</p>
         <div class="source-split">
           <div><strong>公式情報</strong><br>施設公式サイト・医療情報ネット・介護サービス情報公表システムで、所在地、サービス内容、指定情報を確認します。</div>
           <div><strong>口コミ・雰囲気</strong><br>Googleマップ、Caloo、みんなの介護、LIFULL介護などで利用者目線の情報を確認します。</div>
@@ -1122,7 +1133,7 @@
       <div class="section-head">
         <div>
           <h2>料金プラン</h2>
-          <p>相談はプレミアム限定。スタンダードは、サイト本体をしっかり使うための低価格プランにします。</p>
+          <p>無料で基本を確認し、スタンダードで家族メモ・施設検索・保存機能をしっかり使い、プレミアムで現役看護師に相談できます。相談はプレミアム限定です。</p>
         </div>
       </div>
 
@@ -1580,24 +1591,33 @@
     if(!results) return;
     const filtered=facilities.filter(f=>{
       const tags=(f.tags||'').split(',').map(x=>x.trim());
-      const hay=[f.name,f.category,f.types,f.features,f.notes,f.address].join(' ').toLowerCase();
+      const hay=[f.name,f.category,f.types,f.features,f.notes,f.address,f.city,f.prefecture].join(' ').toLowerCase();
       const condOk=!selected.length || selected.some(s=>tags.includes(s));
       return (!pref || f.prefecture===pref) && (!city || f.city===city) && (!q || hay.includes(q)) && condOk;
-    });
+    }).sort((a,b)=>[a.prefecture,a.city,a.name].join('').localeCompare([b.prefecture,b.city,b.name].join(''),'ja'));
     if(!filtered.length){
-      results.innerHTML='<div class="facility-card"><strong>該当する施設データがありません。</strong><p>都道府県・市町村を広げるか、facilities.csvに施設データを追加してください。実際の施設確認は公的検索システムや各施設への問い合わせが必要です。</p></div>';
+      results.innerHTML='<div class="facility-card"><strong>該当する施設データがありません。</strong><p>市町村を「すべて」に戻す、施設名のキーワードを短くする、状態チェックを外すなどして再検索してください。実際の施設確認は公的検索システムや各施設への問い合わせが必要です。</p></div>';
       return;
     }
-    results.innerHTML=filtered.map(f=>{
+    const MAX_RESULTS=80;
+    const visible=filtered.slice(0,MAX_RESULTS);
+    const summaryText = `検索結果：${filtered.length.toLocaleString('ja-JP')}件 / 表示：${visible.length.toLocaleString('ja-JP')}件`;
+    const hint = filtered.length > MAX_RESULTS ? '件数が多いため、先頭80件のみ表示しています。市町村・施設名・状態チェックでさらに絞り込んでください。' : '候補カードから保存・口コミ確認・Googleマップ確認へ進めます。';
+    results.innerHTML=`<div class="result-summary">${summaryText}<small>${hint}</small></div>` + visible.map(f=>{
       const tagMatch=selected.some(s=>(f.tags||'').split(',').map(x=>x.trim()).includes(s));
-      const types=(f.types||'').split(',').filter(Boolean).map(t=>`<span class="type-tag">${t.trim()}</span>`).join('');
+      const types=(f.types||'').split(',').filter(Boolean).map(t=>`<span class="type-tag">${safeHtml(t.trim())}</span>`).join('');
       return `<article class="facility-card">
-        <h3>${f.name} ${tagMatch ? '<span class="matched">状態に一致</span>' : ''}</h3>
-        <div>${types}</div>
-        <p><strong>地域：</strong>${f.prefecture}${f.city ? ' '+f.city : ''}　<strong>分類：</strong>${f.category||''}</p>
-        <p><strong>特徴：</strong>${f.features||'未登録'}</p>
-        <p><strong>確認メモ：</strong>${f.notes||'未登録'}</p>
-        <p><strong>所在地：</strong>${f.address||'未登録'}　<strong>電話：</strong>${f.phone||'未登録'}</p>
+        <div class="facility-card-top">
+          <div class="facility-title">${safeHtml(f.name)} ${tagMatch ? '<span class="matched">状態に一致</span>' : ''}</div>
+          <div>${types}</div>
+        </div>
+        <div class="facility-meta-grid">
+          <div><strong>地域</strong><br>${safeHtml(f.prefecture)}${f.city ? ' '+safeHtml(f.city) : ''}</div>
+          <div><strong>分類</strong><br>${safeHtml(f.category||'未登録')}</div>
+          <div><strong>特徴</strong><br>${safeHtml(f.features||'未登録')}</div>
+          <div><strong>所在地・電話</strong><br>${safeHtml(f.address||'未登録')}<br>${safeHtml(f.phone||'電話未登録')}</div>
+        </div>
+        <p><strong>確認メモ：</strong>${safeHtml(f.notes||'未登録')}</p>
         <div class="save-actions">
           <button class="save-btn" type="button" data-save-id="${facilityId(f)}">保存する</button>
           <button class="memo-btn" type="button" data-scroll-saved="${facilityId(f)}">保存一覧を見る</button>
@@ -1652,13 +1672,22 @@
 
   async function loadFacilities(){
     facilities=fallbackFacilities;
+    let loadedFromCsv=false;
     try{
       const res=await fetch('facilities.csv?v=' + Date.now(), {cache:'no-store'});
       if(res.ok){
         const parsed=parseCSV(await res.text()).map(normalizeFacilityRow).filter(f=>f.prefecture && f.name);
-        if(parsed.length) facilities=parsed;
+        if(parsed.length){ facilities=parsed; loadedFromCsv=true; }
       }
     }catch(e){ /* GitHub Pages以外のローカル表示ではfetchできない場合があります */ }
+    const status=document.getElementById('facilityDataStatus');
+    if(status){
+      const prefs=[...new Set(facilities.map(f=>f.prefecture).filter(Boolean))];
+      const prefText=prefs.length===1 ? `${prefs[0]}内` : `${prefs.length}都道府県`;
+      status.innerHTML = loadedFromCsv
+        ? `<strong>${prefText}の施設・事業所データ ${facilities.length.toLocaleString('ja-JP')}件を読み込みました。</strong><br>表示件数が多い場合は、市町村・施設名・患者さんの状態で絞り込んでください。`
+        : `<strong>確認用データを表示しています。</strong><br>公開環境では facilities.csv を同じ場所に置くと、施設検索に反映されます。`;
+    }
     populatePrefectures();
     renderFacilities();
   }
