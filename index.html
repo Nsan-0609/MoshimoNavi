@@ -240,6 +240,11 @@
     .visual-hero{position:relative;min-height:260px;display:grid;place-items:center;background:linear-gradient(180deg,#fffdf8,#eef7f3);border:1px solid var(--line);border-radius:30px;box-shadow:var(--shadow);overflow:hidden}
     .visual-hero:before{content:"";position:absolute;inset:auto -50px -70px auto;width:220px;height:220px;background:rgba(47,111,78,.11);border-radius:50%}
     .visual-hero svg{width:min(92%,420px);height:auto;position:relative;z-index:1}
+
+    .autosave-note{margin-top:14px;border:1px solid rgba(47,111,78,.22);background:#f2fbf6;border-radius:18px;padding:12px 14px;color:#244434;font-weight:700;display:flex;gap:10px;align-items:flex-start;line-height:1.7}
+    .autosave-note small{display:block;font-weight:500;color:var(--muted);margin-top:2px}
+    .autosave-dot{width:10px;height:10px;border-radius:50%;background:#2f6f4e;flex:0 0 auto;margin-top:8px;box-shadow:0 0 0 4px rgba(47,111,78,.12)}
+    .autosave-inline{font-size:.9rem;color:#5f6f78;margin-top:8px}
     .illu-card{display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:0 10px 28px rgba(45,33,18,.06)}
     .illu-icon{flex:0 0 74px;width:74px;height:74px;border-radius:22px;background:linear-gradient(180deg,#f1faf6,#fff8ea);display:grid;place-items:center;border:1px solid var(--line)}
     .illu-icon svg{width:58px;height:58px}
@@ -420,6 +425,10 @@
           <div>タッチ式ナビ</div>
           <div>自由記載例つき</div>
           <div>相談はプレミアム限定</div>
+        </div>
+        <div class="autosave-note" role="status" aria-live="polite">
+          <span class="autosave-dot" aria-hidden="true"></span>
+          <div>入力内容はこの端末に自動保存されます。<small>ページ内を移動しても、メモ・チェック・検索条件は残ります。別端末に渡す場合は「共有」から共有リンクを作ってください。</small></div>
         </div>
       </div>
       <aside class="hero-card" aria-label="状況選択">
@@ -1289,6 +1298,7 @@
       const area = document.getElementById(id);
       area.value = examples[id] || "";
       localStorage.setItem("family-navi-" + id, area.value);
+      saveFormControl(area);
       updateHospitalSummaryPreview();
     });
   });
@@ -1300,6 +1310,7 @@
     if(saved) area.value = saved;
     area.addEventListener("input", ()=>{
       localStorage.setItem("family-navi-" + id, area.value);
+      saveFormControl(area);
       updateHospitalSummaryPreview();
     });
   });
@@ -1348,8 +1359,8 @@
 
   document.querySelectorAll("[data-check]").forEach(ch=>{
     const key = "family-navi-check-" + ch.dataset.check;
-    ch.checked = localStorage.getItem(key) === "true";
-    ch.addEventListener("change", ()=>localStorage.setItem(key, ch.checked));
+    ch.checked = localStorage.getItem(key) === "true" || localStorage.getItem(getFormStorageKey(ch)) === "true";
+    ch.addEventListener("change", ()=>{ localStorage.setItem(key, ch.checked); saveFormControl(ch); });
   });
 
   document.getElementById("printBtn").addEventListener("click", ()=>window.print());
@@ -1399,6 +1410,76 @@
   let loadedPrefecture = "";
   let loadedSourceMode = "none";
   const savedFacilityKey = "family-navi-saved-facilities-v1";
+  const formAutosavePrefix = "family-navi-form-v15-";
+
+  function getFormControlKey(el){
+    if(!el) return "unknown";
+    if(el.id) return el.id;
+    if(el.dataset && el.dataset.check) return "data-check-" + el.dataset.check;
+    if(el.name) return "name-" + el.name;
+    if(el.dataset && el.dataset.autosaveKey) return el.dataset.autosaveKey;
+    const controls = Array.from(document.querySelectorAll('main input:not([type="button"]):not([type="submit"]), main textarea, main select'));
+    const idx = controls.indexOf(el);
+    const labelText = (el.closest('label')?.innerText || el.getAttribute('aria-label') || el.placeholder || el.type || 'control').trim().replace(/\s+/g,' ').slice(0,80);
+    const section = (el.closest('section')?.id || el.closest('.card')?.querySelector('h2,h3')?.textContent || 'site').trim().replace(/\s+/g,' ').slice(0,50);
+    const key = (section + '-' + labelText + '-' + idx).replace(/[\s\/\?#&=]+/g,'_');
+    el.dataset.autosaveKey = key;
+    return key;
+  }
+
+  function getFormStorageKey(el){
+    return formAutosavePrefix + getFormControlKey(el);
+  }
+
+  function saveFormControl(el){
+    if(!el || el.disabled || el.readOnly) return;
+    const key = getFormStorageKey(el);
+    const value = (el.type === 'checkbox') ? (el.checked ? 'true' : 'false') : el.value;
+    localStorage.setItem(key, value);
+  }
+
+  function restoreFormControl(el){
+    if(!el || el.disabled || el.readOnly) return;
+    const saved = localStorage.getItem(getFormStorageKey(el));
+    if(saved === null) return;
+    if(el.type === 'checkbox'){
+      el.checked = saved === 'true';
+    }else{
+      if(el.tagName === 'SELECT' && saved && !Array.from(el.options).some(o=>o.value===saved)) return;
+      el.value = saved;
+    }
+  }
+
+  function initFormAutosave(){
+    const controls = document.querySelectorAll('main input:not([type="button"]):not([type="submit"]), main textarea:not([readonly]), main select');
+    controls.forEach(el=>{
+      if(el.disabled || el.readOnly) return;
+      if(!el.dataset.autosaveReady){
+        restoreFormControl(el);
+        const eventName = el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input';
+        el.addEventListener(eventName, ()=>{
+          saveFormControl(el);
+          if(['memo1','memo2','memo3','usualStatus','abilityStatus','familySupport'].includes(el.id)) updateHospitalSummaryPreview();
+        });
+        el.dataset.autosaveReady = '1';
+      }
+    });
+  }
+
+  function saveCurrentFacilityFilters(){
+    ['prefSelect','citySelect','facilitySearch'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) saveFormControl(el);
+    });
+  }
+
+  function clearFacilityFilterAutosave(){
+    ['prefSelect','citySelect','facilitySearch'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) localStorage.removeItem(getFormStorageKey(el));
+    });
+    document.querySelectorAll('#conditionGrid input').forEach(input=>localStorage.removeItem(getFormStorageKey(input)));
+  }
 
   function safeHtml(v){
     return String(v||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
@@ -1550,7 +1631,7 @@
     chips.innerHTML = types.length ? types.map(t=>`<button class="chip" type="button" data-type-search="${t}">${t}</button>`).join('') : '<span class="chip">状態にチェックしてください</span>';
     text.textContent = texts.length ? texts.join(' ') : 'チェック内容に合わせて、病院・施設タイプの候補を表示します。';
     document.querySelectorAll('[data-type-search]').forEach(btn=>{
-      btn.addEventListener('click',()=>{ document.getElementById('facilitySearch').value=btn.dataset.typeSearch; renderFacilities(); });
+      btn.addEventListener('click',()=>{ const search=document.getElementById('facilitySearch'); search.value=btn.dataset.typeSearch; saveFormControl(search); renderFacilities(); });
     });
   }
 
@@ -1733,6 +1814,7 @@
           loadedSourceMode=url.startsWith('data/') ? 'pref-split' : 'single-csv';
           setFacilityStatus(`<strong>${safeHtml(pref)}の施設・事業所データ ${facilities.length.toLocaleString('ja-JP')}件を読み込みました。</strong><br>市町村・施設名・患者さんの状態で絞り込んでください。`);
           populateCities();
+          restoreFormControl(document.getElementById('citySelect'));
           renderFacilities();
           return;
         }
@@ -1748,21 +1830,29 @@
   async function loadFacilities(){
     facilities=[];
     populatePrefectures();
-    await loadPrefectureFacilities('');
+    initFormAutosave();
+    const prefEl = document.getElementById('prefSelect');
+    restoreFormControl(prefEl);
+    const savedPref = prefEl?.value || '';
+    await loadPrefectureFacilities(savedPref);
+    restoreFormControl(document.getElementById('facilitySearch'));
+    updateRecommendations();
+    renderFacilities();
   }
 
   document.querySelectorAll('#conditionGrid input').forEach(input=>{
-    input.addEventListener('change',()=>{ updateRecommendations(); renderFacilities(); });
+    input.addEventListener('change',()=>{ saveFormControl(input); updateRecommendations(); renderFacilities(); });
   });
-  document.getElementById('prefSelect')?.addEventListener('change',async()=>{ await loadPrefectureFacilities(document.getElementById('prefSelect')?.value || ''); });
-  document.getElementById('citySelect')?.addEventListener('change',renderFacilities);
-  document.getElementById('facilitySearch')?.addEventListener('input',renderFacilities);
+  document.getElementById('prefSelect')?.addEventListener('change',async()=>{ saveFormControl(document.getElementById('prefSelect')); await loadPrefectureFacilities(document.getElementById('prefSelect')?.value || ''); });
+  document.getElementById('citySelect')?.addEventListener('change',()=>{ saveFormControl(document.getElementById('citySelect')); renderFacilities(); });
+  document.getElementById('facilitySearch')?.addEventListener('input',()=>{ saveFormControl(document.getElementById('facilitySearch')); renderFacilities(); });
   document.getElementById('applyFacilityFilter')?.addEventListener('click',renderFacilities);
   document.getElementById('resetFacilityFilter')?.addEventListener('click',()=>{
     document.querySelectorAll('#conditionGrid input').forEach(i=>i.checked=false);
     document.getElementById('prefSelect').value='';
     populateCities();
     document.getElementById('facilitySearch').value='';
+    clearFacilityFilterAutosave();
     updateRecommendations();
     renderFacilities();
   });
@@ -1820,7 +1910,7 @@
     Object.keys(memos).forEach(id=>{
       const val = String(memos[id] || '');
       const el = document.getElementById(id);
-      if(el) el.value = val;
+      if(el){ el.value = val; saveFormControl(el); }
       localStorage.setItem("family-navi-"+id, val);
     });
     const checks = state.checks || {};
@@ -1828,6 +1918,7 @@
       if(Object.prototype.hasOwnProperty.call(checks, ch.dataset.check)){
         ch.checked = !!checks[ch.dataset.check];
         localStorage.setItem('family-navi-check-' + ch.dataset.check, ch.checked);
+        saveFormControl(ch);
       }
     });
     if(Array.isArray(state.savedFacilities)){
@@ -1918,14 +2009,23 @@
   refreshShareUrlBox();
 
 
+  const savedFontMode = localStorage.getItem('family-navi-font-mode') || 'normal';
+  if(savedFontMode === 'large') document.documentElement.classList.add('font-large');
+  if(savedFontMode === 'xlarge') document.documentElement.classList.add('font-xlarge');
+  if(localStorage.getItem('family-navi-high-contrast') === 'true') document.documentElement.classList.add('high-contrast');
+
   document.querySelectorAll("[data-font]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       document.documentElement.classList.remove("font-large","font-xlarge");
       if(btn.dataset.font === "large") document.documentElement.classList.add("font-large");
       if(btn.dataset.font === "xlarge") document.documentElement.classList.add("font-xlarge");
+      localStorage.setItem('family-navi-font-mode', btn.dataset.font || 'normal');
     });
   });
-  document.getElementById("contrastBtn").addEventListener("click", ()=>document.documentElement.classList.toggle("high-contrast"));
+  document.getElementById("contrastBtn").addEventListener("click", ()=>{
+    document.documentElement.classList.toggle("high-contrast");
+    localStorage.setItem('family-navi-high-contrast', document.documentElement.classList.contains('high-contrast'));
+  });
 </script>
 </body>
 </html>
