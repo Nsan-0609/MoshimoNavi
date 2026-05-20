@@ -755,7 +755,7 @@
           <a class="btn light" href="https://www.iryou.teikyouseido.mhlw.go.jp/" target="_blank" rel="noopener">医療情報ネットで探す</a>
           <a class="btn light" href="https://www.kaigokensaku.mhlw.go.jp/" target="_blank" rel="noopener">介護サービス情報で探す</a>
         </div>
-        <p class="source-note">実運用では、施設データを <strong>facilities.csv</strong> に追加・差し替えれば、この検索欄に反映されます。現在は動作確認用のサンプルデータです。</p>
+        <p class="source-note">実運用では、施設データを <strong>facilities.csv</strong> に追加・差し替えれば、この検索欄に反映されます。CSVを更新すると、施設検索に反映されます。</p>
         <div class="source-split">
           <div><strong>公式情報</strong><br>施設公式サイト・医療情報ネット・介護サービス情報公表システムで、所在地、サービス内容、指定情報を確認します。</div>
           <div><strong>口コミ・雰囲気</strong><br>Googleマップ、Caloo、みんなの介護、LIFULL介護などで利用者目線の情報を確認します。</div>
@@ -1585,7 +1585,7 @@
       return (!pref || f.prefecture===pref) && (!city || f.city===city) && (!q || hay.includes(q)) && condOk;
     });
     if(!filtered.length){
-      results.innerHTML='<div class="facility-card"><strong>該当するサンプルデータがありません。</strong><p>都道府県・市町村を広げるか、facilities.csvに施設データを追加してください。実際の施設確認は公的検索システムや各施設への問い合わせが必要です。</p></div>';
+      results.innerHTML='<div class="facility-card"><strong>該当する施設データがありません。</strong><p>都道府県・市町村を広げるか、facilities.csvに施設データを追加してください。実際の施設確認は公的検索システムや各施設への問い合わせが必要です。</p></div>';
       return;
     }
     results.innerHTML=filtered.map(f=>{
@@ -1615,12 +1615,47 @@
     updateSaveButtons();
   }
 
+  function buildConditionTags(f){
+    const text=[f.name,f.category,f.types,f.tags,f.features,f.notes,f.address].join(' ');
+    const set=new Set((f.tags||'').split(',').map(x=>x.trim()).filter(Boolean));
+    if(/リハビリ|老健|介護老人保健施設|通所リハ|訪問リハ|回復期/.test(text)) set.add('rehab');
+    if(/医療|病院|診療所|介護医療院|訪問看護|看護小規模|療養|医療ケア/.test(text)) set.add('medical-care');
+    if(/認知症|グループホーム/.test(text)) set.add('dementia');
+    if(/特養|特別養護老人ホーム|介護付き|有料老人ホーム|介護医療院|常時介護|入所/.test(text)) set.add('heavy-care');
+    if(/ショート|短期入所|一時利用/.test(text)) set.add('short-stay');
+    if(/訪問|通所|デイサービス|居宅介護支援|ケアマネ|地域包括|在宅|小規模多機能/.test(text)) set.add('home-support');
+    if(/病院|地域包括ケア|退院|老健|有料老人ホーム|介護老人保健施設/.test(text)) set.add('hospital-now');
+    if(/特養|特別養護老人ホーム|介護保険|公的|費用|負担/.test(text)) set.add('budget');
+    return Array.from(set).join(',');
+  }
+
+  function normalizeFacilityRow(raw){
+    const f={
+      prefecture: raw.prefecture || raw.pref || raw['都道府県'] || raw['都道府県名'] || '',
+      city: raw.city || raw['市町村'] || raw['市区町村'] || raw['市町村名'] || '',
+      name: raw.name || raw['施設名'] || raw['事業所名'] || raw['医療機関名称'] || raw['名称'] || '',
+      category: raw.category || raw.type || raw['分類'] || raw['サービス種類'] || '',
+      types: raw.types || raw.type || raw['種類'] || raw['サービス種類'] || '',
+      tags: raw.tags || '',
+      address: raw.address || raw['住所'] || raw['所在地'] || '',
+      phone: raw.phone || raw.tel || raw['電話番号'] || raw['電話'] || '',
+      website: raw.website || raw.url || raw['URL'] || raw['ホームページ'] || raw.external_search || '',
+      features: raw.features || raw.description || raw['特徴'] || '',
+      notes: raw.notes || raw.source || raw.last_updated || '',
+      source: raw.source || '',
+      source_url: raw.source_url || '',
+      last_updated: raw.last_updated || ''
+    };
+    f.tags=buildConditionTags(f);
+    return f;
+  }
+
   async function loadFacilities(){
     facilities=fallbackFacilities;
     try{
-      const res=await fetch('facilities.csv', {cache:'no-store'});
+      const res=await fetch('facilities.csv?v=' + Date.now(), {cache:'no-store'});
       if(res.ok){
-        const parsed=parseCSV(await res.text()).filter(f=>f.prefecture && f.name);
+        const parsed=parseCSV(await res.text()).map(normalizeFacilityRow).filter(f=>f.prefecture && f.name);
         if(parsed.length) facilities=parsed;
       }
     }catch(e){ /* GitHub Pages以外のローカル表示ではfetchできない場合があります */ }
