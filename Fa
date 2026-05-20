@@ -34,7 +34,6 @@
       line-height:1.8;
     }
     a{color:var(--accent);font-weight:700}
-    ruby rt{font-size:.62em;color:var(--muted)}
     .wrap{width:min(1120px,92vw);margin:auto}
     header{
       position:sticky;top:0;z-index:20;
@@ -403,7 +402,6 @@
           <a class="btn light" href="#pricing">プランを見る</a>
         </div>
         <div class="trust">
-          <div>ふりがな対応</div>
           <div>タッチ式ナビ</div>
           <div>自由記載例つき</div>
           <div>相談はプレミアム限定</div>
@@ -462,40 +460,7 @@
     </div>
   </section>
 
-  <section id="visual-policy">
-    <div class="wrap design-system">
-      <div class="card emph">
-        <span class="badge free">デザイン統一ルール</span>
-        <h2>誰でも見やすい画面にするためのルール</h2>
-        <p>このサイトでは、やさしい色、同じ形のカード、大きなボタン、少量のイラストで統一します。高齢者本人や家族が急いでいる時でも、迷わず押せる画面を優先します。</p>
-        <div class="token-grid">
-          <div class="token"><strong>色</strong><br>緊急・通常・相談・保存を色で分ける。ただし色だけで意味を伝えない。</div>
-          <div class="token"><strong>文字</strong><br>本文は大きめ、行間広め。難しい言葉はふりがなを使う。</div>
-          <div class="token"><strong>イラスト</strong><br>1セクション1枚まで。説明を助ける用途だけに使う。</div>
-          <div class="token"><strong>操作</strong><br>チェック、保存、コピー、印刷のボタン位置を統一する。</div>
-        </div>
-        <div class="swatches" aria-label="サイトで使う色の例">
-          <span class="swatch dark"></span><span class="swatch green"></span><span class="swatch gold"></span><span class="swatch cream"></span><span class="swatch danger"></span>
-        </div>
-      </div>
-      <div class="cards" style="grid-template-columns:1fr;gap:12px">
-        <div class="illu-card">
-          <div class="illu-icon" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="30" r="18" fill="#f0c7a6"/><path d="M24 82c5-26 16-38 26-38s21 12 26 38" fill="#2f6f4e"/><path d="M30 24c14-18 34-16 44 0" stroke="#17324d" stroke-width="7" fill="none" stroke-linecap="round"/></svg></div>
-          <div><h3>本人・家族を責めない表現</h3><p>「できていない」ではなく「確認しておくと安心」に統一します。</p></div>
-        </div>
-        <div class="illu-card">
-          <div class="illu-icon" aria-hidden="true"><svg viewBox="0 0 100 100"><rect x="23" y="18" width="54" height="66" rx="10" fill="#fff" stroke="#c09349" stroke-width="5"/><path d="M36 40h28M36 54h28M36 68h20" stroke="#17324d" stroke-width="6" stroke-linecap="round"/></svg></div>
-          <div><h3>説明より先に行動</h3><p>長い解説の前に「まず何をするか」を表示します。</p></div>
-        </div>
-        <div class="illu-card">
-          <div class="illu-icon" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M18 74h64" stroke="#17324d" stroke-width="7" stroke-linecap="round"/><rect x="24" y="32" width="52" height="36" rx="8" fill="#fff8ea" stroke="#2f6f4e" stroke-width="5"/><path d="M40 50h20M50 40v20" stroke="#a43f3f" stroke-width="7" stroke-linecap="round"/></svg></div>
-          <div><h3>医療・介護の導線を分ける</h3><p>病院、施設、地域包括、ケアマネの役割を混ぜずに案内します。</p></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="quickmode">
+<section id="quickmode">
     <div class="wrap">
       <div class="section-head"><div><h2>急いでいる人向けの2つの見方</h2><p>家族は慌てて検索することが多いため、短時間で確認する入口と、あとで詳しく整理する入口を分けます。</p></div></div>
       <div class="quick-mode">
@@ -912,85 +877,85 @@
           </thead>
           <tbody>
             <tr>
-              <td><ruby>急性期病院<rt>きゅうせいきびょういん</rt></ruby></td>
+              <td>急性期病院</td>
               <td>病気やけがの治療を集中的に行う病院。検査・手術・点滴・急変対応などが中心。</td>
               <td>肺炎、骨折、脳卒中、心不全など、まず治療が必要な状態。</td>
               <td>退院目安、治療後にどこまで動けるか、退院支援の相談先。</td>
             </tr>
             <tr>
-              <td><ruby>地域包括ケア病棟<rt>ちいきほうかつケアびょうとう</rt></ruby></td>
+              <td>地域包括ケア病棟</td>
               <td>急性期治療後、在宅や施設へ戻るために医療・リハビリ・退院調整を行う病棟。</td>
               <td>治療は落ち着いたが、すぐ家に帰るには不安がある人。</td>
               <td>入院期間の目安、退院先、介護サービス、家族の受け入れ準備。</td>
             </tr>
             <tr>
-              <td><ruby>回復期リハビリ病棟<rt>かいふくきリハビリびょうとう</rt></ruby></td>
+              <td>回復期リハビリ病棟</td>
               <td>脳卒中・骨折などの後、生活動作を取り戻すために集中的なリハビリを行う病棟。</td>
               <td>歩行・トイレ・食事・着替えなど、退院後の生活動作を改善したい人。</td>
               <td>リハビリ目標、自宅環境、退院時の移動能力、福祉用具。</td>
             </tr>
             <tr>
-              <td><ruby>療養病床<rt>りょうようびょうしょう</rt></ruby></td>
+              <td>療養病床</td>
               <td>急性期治療後も、医療管理が長く必要な人が療養する病床。</td>
               <td>医療処置や病状管理が必要で、すぐ自宅や介護施設に移りにくい人。</td>
               <td>医療処置の内容、入院期間、転院先、費用、面会・持ち物。</td>
             </tr>
             <tr>
-              <td><ruby>特別養護老人ホーム<rt>とくべつようごろうじんホーム</rt></ruby></td>
+              <td>特別養護老人ホーム</td>
               <td>常時介護が必要で、自宅生活が難しい人の生活の場。食事・入浴・排泄などを支援。</td>
               <td>要介護度が高く、長期的な生活場所を探している人。</td>
               <td>入居条件、待機期間、費用、看取り対応、医療処置の可否。</td>
             </tr>
             <tr>
-              <td><ruby>介護老人保健施設<rt>かいごろうじんほけんしせつ</rt></ruby>（老健）</td>
+              <td>介護老人保健施設（老健）</td>
               <td>病院と自宅の中間。リハビリや看護・介護を受けながら在宅復帰を目指す施設。</td>
               <td>退院後すぐ家に戻るのが不安で、もう少しリハビリや生活準備が必要な人。</td>
               <td>入所期間の目安、在宅復帰の目標、リハビリ頻度、退所後のサービス。</td>
             </tr>
             <tr>
-              <td><ruby>介護医療院<rt>かいごいりょういん</rt></ruby></td>
+              <td>介護医療院</td>
               <td>長期的な医療と介護の両方が必要な人のための生活施設。医学管理や看取りにも対応しやすい。</td>
               <td>医療ケアが継続的に必要で、生活の場も必要な人。</td>
               <td>対応できる医療処置、看取り、費用、面会、生活環境。</td>
             </tr>
             <tr>
-              <td><ruby>介護付き有料老人ホーム<rt>かいごつきゆうりょうろうじんホーム</rt></ruby></td>
+              <td>介護付き有料老人ホーム</td>
               <td>施設内で介護サービスを受けながら生活する民間系の住まい。</td>
               <td>見守りや介護が必要で、比較的早く入居先を探したい人。</td>
               <td>月額費用、入居一時金、看護師配置、医療処置、夜間体制。</td>
             </tr>
             <tr>
-              <td><ruby>住宅型有料老人ホーム<rt>じゅうたくがたゆうりょうろうじんホーム</rt></ruby></td>
+              <td>住宅型有料老人ホーム</td>
               <td>住まいとして入居し、必要な介護サービスは外部サービスを組み合わせる形が多い。</td>
               <td>生活の見守りが必要で、訪問介護・訪問看護などを組み合わせたい人。</td>
               <td>介護費用が別にかかるか、夜間対応、医療連携、重度化時の対応。</td>
             </tr>
             <tr>
-              <td><ruby>サービス付き高齢者向け住宅<rt>サービスつきこうれいしゃむけじゅうたく</rt></ruby></td>
+              <td>サービス付き高齢者向け住宅</td>
               <td>安否確認・生活相談がある高齢者向け賃貸住宅。介護は外部サービス利用が多い。</td>
               <td>ある程度自立しているが、一人暮らしが不安な人。</td>
               <td>介護が重くなった時に住み続けられるか、追加費用、見守り内容。</td>
             </tr>
             <tr>
-              <td><ruby>グループホーム<rt>グループホーム</rt></ruby></td>
+              <td>グループホーム</td>
               <td>認知症の人が少人数で共同生活し、職員の支援を受けながら暮らす施設。</td>
               <td>認知症があり、自宅生活が難しくなってきた人。</td>
               <td>入居条件、医療対応、看取り、本人との相性、家族面会。</td>
             </tr>
             <tr>
-              <td><ruby>ショートステイ<rt>ショートステイ</rt></ruby></td>
+              <td>ショートステイ</td>
               <td>短期間だけ施設に泊まり、介護や見守りを受けるサービス。</td>
               <td>家族の休息、冠婚葬祭、介護負担が一時的に大きい時。</td>
               <td>空き状況、送迎、医療処置、持ち物、連泊できる日数。</td>
             </tr>
             <tr>
-              <td><ruby>訪問看護<rt>ほうもんかんご</rt></ruby></td>
+              <td>訪問看護</td>
               <td>看護師などが自宅へ訪問し、健康状態確認・医療処置・療養相談を行う。</td>
               <td>自宅で過ごしたいが、病状や医療ケアに不安がある人。</td>
               <td>主治医の指示、訪問回数、緊急時対応、家族への指導。</td>
             </tr>
             <tr>
-              <td><ruby>デイサービス<rt>デイサービス</rt></ruby>・通所リハ</td>
+              <td>デイサービス・通所リハ</td>
               <td>日中に施設へ通い、入浴・食事・機能訓練・交流などを受ける。</td>
               <td>家に閉じこもりがち、入浴が難しい、家族の介護負担を軽くしたい人。</td>
               <td>送迎範囲、入浴対応、リハビリ内容、認知症対応、費用。</td>
